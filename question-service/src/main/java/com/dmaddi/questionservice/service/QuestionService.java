@@ -18,6 +18,7 @@ public class QuestionService {
 
     @Autowired
     private QuestionDao questionDao;
+
     public ResponseEntity<List<Question>> getAllQuestions(){
         try {
             return new ResponseEntity<>(questionDao.findAll(), HttpStatus.OK);
@@ -39,8 +40,13 @@ public class QuestionService {
     }
 
     public ResponseEntity<String> addQuestion(Question question) {
-        questionDao.save(question);
-        return new ResponseEntity<>("success", HttpStatus.CREATED);
+        if(question.getQuestionTitle().isEmpty())
+            return new ResponseEntity<>("failure", HttpStatus.NOT_ACCEPTABLE);
+
+        else{
+            questionDao.save(question);
+            return new ResponseEntity<>("success", HttpStatus.CREATED);
+        }
     }
 
     public ResponseEntity<List<Integer>> getQuestionsForQuiz(String categoryName, Integer numQuestions) {
@@ -52,6 +58,9 @@ public class QuestionService {
     public ResponseEntity<List<QuestionWrapper>> getQuestionsFromId(List<Integer> questionIds) {
         List<QuestionWrapper> wrappers = new ArrayList<>();
         List<Question> questions = new ArrayList<>();
+
+        if(questionIds.isEmpty())
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
 
         for(Integer id: questionIds){
             questions.add(questionDao.findById(id).get());
@@ -68,6 +77,8 @@ public class QuestionService {
         int rightAnswers = 0;
 
         for(Response response: responses) {
+            if(response.getId() <= 0)
+                return new ResponseEntity<>(0, HttpStatus.BAD_REQUEST);
             Question question = questionDao.findById(response.getId()).get();
             if(response.getResponse().equals(question.getRightAnswer()))
                 rightAnswers++;
